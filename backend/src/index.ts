@@ -50,6 +50,27 @@ app.get("/api/tasks/:deskId", (req, res) => {
   res.json(deskTasks);
 });
 
+app.post("/api/tasks", (req, res) => {
+  const { deskId, title } = req.body;
+
+  if (!deskId || !title) {
+    return res.status(400).json({
+      error: "deskId and title are required"
+    });
+  }
+
+  const newTask = {
+    id: `task-${tasks.length + 1}`,
+    deskId,
+    title,
+    status: "pending"
+  };
+
+  tasks.push(newTask);
+
+  res.status(201).json(newTask);
+});
+
 
 app.listen(5000, () => {
   console.log("✅ Backend running on http://localhost:5000");
