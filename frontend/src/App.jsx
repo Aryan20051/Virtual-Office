@@ -5,6 +5,23 @@ function App() {
   const [desks, setDesks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDesk, setSelectedDesk] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
+
+  const loadTasks = (deskId) => {
+    setTasksLoading(true);
+
+    fetch(`http://localhost:5000/api/tasks/${deskId}`)
+      .then(res => res.json())
+      .then(data => {
+        setTasks(data);
+        setTasksLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setTasksLoading(false);
+      });
+  };
 
   useEffect(() => {
     fetch("http://localhost:5000/api/desks")
@@ -26,8 +43,12 @@ function App() {
     <div style={{ width: "100vw", height: "100vh" }}>
       <Office
         desks={desks}
-        setSelectedDesk={setSelectedDesk}
+        setSelectedDesk={(desk) => {
+          setSelectedDesk(desk);
+          loadTasks(desk.id);
+        }}
       />
+
 
       {selectedDesk && (
         <div
@@ -46,6 +67,21 @@ function App() {
           <p><b>Owner:</b> {selectedDesk.owner}</p>
           <p><b>Status:</b> {selectedDesk.status}</p>
           <p><b>Light:</b> {selectedDesk.light ? "ON" : "OFF"}</p>
+
+          <h4>Tasks</h4>
+
+          {tasksLoading && <p>Loading tasks...</p>}
+
+          {!tasksLoading && tasks.length === 0 && (
+            <p>No tasks</p>
+          )}
+
+          {!tasksLoading && tasks.map(task => (
+            <p key={task.id}>
+              {task.status === "done" ? "✅" : "⏳"} {task.title}
+            </p>
+          ))}
+
 
           <button
             style={{ marginTop: "8px" }}
