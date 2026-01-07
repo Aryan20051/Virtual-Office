@@ -7,6 +7,8 @@ function App() {
   const [selectedDesk, setSelectedDesk] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [tasksLoading, setTasksLoading] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+
 
   const loadTasks = (deskId) => {
     setTasksLoading(true);
@@ -22,6 +24,20 @@ function App() {
         setTasksLoading(false);
       });
   };
+
+  const handleCreateTask = () => {
+    if (!newTaskTitle.trim() || !selectedDesk) return;
+
+    const newTask = {
+      id: `temp-${Date.now()}`,
+      title: newTaskTitle,
+      status: "pending"
+    };
+
+    setTasks(prev => [...prev, newTask]);
+    setNewTaskTitle("");
+  };
+
 
   useEffect(() => {
     fetch("http://localhost:5000/api/desks")
@@ -67,6 +83,21 @@ function App() {
           <p><b>Owner:</b> {selectedDesk.owner}</p>
           <p><b>Status:</b> {selectedDesk.status}</p>
           <p><b>Light:</b> {selectedDesk.light ? "ON" : "OFF"}</p>
+
+          <h4>Create Task</h4>
+
+          <input
+            type="text"
+            placeholder="Enter task title"
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            style={{ width: "100%", marginBottom: "8px" }}
+          />
+
+          <button onClick={handleCreateTask}>
+            Add Task
+          </button>
+
 
           <h4>Tasks</h4>
 
