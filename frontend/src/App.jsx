@@ -5,7 +5,6 @@ import rainSound from "./assets/sounds/rain.mp3";
 import clickSound from "./assets/sounds/click.mp3";
 
 function App() {
-  const [isNight, setIsNight] = useState(true);
   const [desks, setDesks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDesk, setSelectedDesk] = useState(null);
@@ -14,9 +13,15 @@ function App() {
   const [tasksLoading, setTasksLoading] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
-  // 🌧️ Rain sound control
+  // 🌧️ Rain sound
   const rainAudioRef = useRef(null);
   const [isRainMuted, setIsRainMuted] = useState(false);
+
+  // 🌗 Day / Night
+  const [isNight, setIsNight] = useState(true);
+
+  // 🎬 Panel animation state
+  const [showPanel, setShowPanel] = useState(false);
 
   /* 🌧️ Start rain ambience */
   useEffect(() => {
@@ -24,9 +29,7 @@ function App() {
     rain.loop = true;
     rain.volume = 0.12;
     rain.play();
-
     rainAudioRef.current = rain;
-
     return () => rain.pause();
   }, []);
 
@@ -51,6 +54,7 @@ function App() {
       .then(data => {
         setTasks(data);
         setTasksLoading(false);
+        setShowPanel(true); // 🎬 animate in
       });
   }, [selectedDesk]);
 
@@ -62,7 +66,6 @@ function App() {
 
   const handleCreateTask = () => {
     if (!newTaskTitle.trim() || !selectedDesk) return;
-
     playSound(clickSound, 0.25);
 
     fetch("http://localhost:5000/api/tasks", {
@@ -92,12 +95,15 @@ function App() {
     }).then(() => reloadTasks());
   };
 
-  /* 🌧️ Toggle rain mute */
   const toggleRain = () => {
     if (!rainAudioRef.current) return;
-
     rainAudioRef.current.muted = !isRainMuted;
     setIsRainMuted(prev => !prev);
+  };
+
+  const closePanel = () => {
+    setShowPanel(false);
+    setTimeout(() => setSelectedDesk(null), 250); // 🎬 wait for animation
   };
 
   if (loading) return <h2>Loading 3D office...</h2>;
@@ -110,8 +116,7 @@ function App() {
         isNight={isNight}
       />
 
-
-      {/* 🌧️ Rain Mute Button */}
+      {/* 🌧️ Rain Toggle */}
       <button
         onClick={toggleRain}
         style={{
@@ -121,16 +126,15 @@ function App() {
           padding: "8px 12px",
           borderRadius: 10,
           border: "none",
-          cursor: "pointer",
           background: "rgba(17,17,17,0.6)",
-          backdropFilter: "blur(10px)",
           color: "#fff",
-          fontSize: 14
+          cursor: "pointer"
         }}
       >
         {isRainMuted ? "🔇 Rain Muted" : "🌧️ Rain On"}
       </button>
 
+      {/* 🌗 Day / Night */}
       <button
         onClick={() => setIsNight(prev => !prev)}
         style={{
@@ -140,23 +144,22 @@ function App() {
           padding: "8px 12px",
           borderRadius: 10,
           border: "none",
-          cursor: "pointer",
           background: "rgba(17,17,17,0.6)",
-          backdropFilter: "blur(10px)",
           color: "#fff",
-          fontSize: 14
+          cursor: "pointer"
         }}
       >
-        {isNight ? "🌙 Night Mode" : "🌞 Day Mode"}
+        {isNight ? "🌙 Night" : "🌞 Day"}
       </button>
 
-
+      {/* 🎬 Animated Panel */}
       {selectedDesk && (
         <div
           style={{
             position: "absolute",
             top: 24,
-            right: 24,
+            right: showPanel ? 24 : -340,
+            opacity: showPanel ? 1 : 0,
             width: 300,
             padding: 18,
             borderRadius: 16,
@@ -164,13 +167,11 @@ function App() {
             backdropFilter: "blur(14px)",
             border: "1px solid rgba(255,255,255,0.12)",
             boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
-            color: "#fff"
+            color: "#fff",
+            transition: "all 0.25s ease"
           }}
         >
           <h3>{selectedDesk.owner}</h3>
-          <p style={{ fontSize: 12, opacity: 0.7 }}>
-            Status: {selectedDesk.status}
-          </p>
 
           <input
             value={newTaskTitle}
@@ -240,6 +241,20 @@ function App() {
               </div>
             ))}
           </div>
+
+          <button
+            onClick={closePanel}
+            style={{
+              marginTop: 10,
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              color: "#9ca3af",
+              cursor: "pointer"
+            }}
+          >
+            Close
+          </button>
         </div>
       )}
     </div>
