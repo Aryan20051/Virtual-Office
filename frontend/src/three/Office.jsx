@@ -92,8 +92,10 @@ export default function Office({ desks, setSelectedDesk }) {
             key={desk.id}
             desk={desk}
             position={position}
+            isActive={activeDeskId === desk.id}
             onSelect={() => handleDeskSelect(desk, position)}
           />
+
         );
       })}
 

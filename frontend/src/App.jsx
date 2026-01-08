@@ -10,7 +10,7 @@ function App() {
   const [tasksLoading, setTasksLoading] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
-  // 🔹 Load desks (ONCE)
+  // Load desks
   useEffect(() => {
     fetch("http://localhost:5000/api/desks")
       .then(res => res.json())
@@ -18,176 +18,194 @@ function App() {
         setDesks(data);
         setLoading(false);
       })
-      .catch(err => {
-        console.error("Fetch desks error:", err);
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, []);
 
-  // 🔹 Load tasks WHEN selectedDesk changes
+  // Load tasks when desk changes
   useEffect(() => {
     if (!selectedDesk) return;
 
     setTasksLoading(true);
-
     fetch(`http://localhost:5000/api/tasks/${selectedDesk.id}`)
       .then(res => res.json())
       .then(data => {
         setTasks(data);
         setTasksLoading(false);
-      })
-      .catch(err => {
-        console.error("Load tasks error:", err);
-        setTasksLoading(false);
       });
   }, [selectedDesk]);
 
-  // 🔹 Create task
+  const reloadTasks = () => {
+    fetch(`http://localhost:5000/api/tasks/${selectedDesk.id}`)
+      .then(res => res.json())
+      .then(data => setTasks(data));
+  };
+
   const handleCreateTask = () => {
     if (!newTaskTitle.trim() || !selectedDesk) return;
 
     fetch("http://localhost:5000/api/tasks", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         deskId: selectedDesk.id,
         title: newTaskTitle
       })
     })
-      .then(res => res.json())
       .then(() => {
         setNewTaskTitle("");
-
-        // reload tasks
-        fetch(`http://localhost:5000/api/tasks/${selectedDesk.id}`)
-          .then(res => res.json())
-          .then(data => setTasks(data));
-      })
-      .catch(err => console.error("Create task error:", err));
+        reloadTasks();
+      });
   };
 
-  // 🔹 DELETE TASK
   const handleDeleteTask = (taskId) => {
-    if (!selectedDesk) return;
-
     fetch(`http://localhost:5000/api/tasks/${taskId}`, {
       method: "DELETE"
-    })
-      .then(res => res.json())
-      .then(() => {
-        // reload tasks after delete
-        fetch(`http://localhost:5000/api/tasks/${selectedDesk.id}`)
-          .then(res => res.json())
-          .then(data => setTasks(data));
-      })
-      .catch(err => console.error("Delete task error:", err));
+    }).then(() => reloadTasks());
   };
 
   const handleToggleTaskStatus = (taskId) => {
-    if (!selectedDesk) return;
-
     fetch(`http://localhost:5000/api/tasks/${taskId}`, {
       method: "PATCH"
-    })
-      .then(res => res.json())
-      .then(() => {
-        // reload tasks
-        fetch(`http://localhost:5000/api/tasks/${selectedDesk.id}`)
-          .then(res => res.json())
-          .then(data => setTasks(data));
-      })
-      .catch(err => console.error("Toggle task error:", err));
+    }).then(() => reloadTasks());
   };
 
-
-  if (loading) {
-    return <h2>Loading 3D office...</h2>;
-  }
+  if (loading) return <h2>Loading 3D office...</h2>;
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      <Office
-        desks={desks}
-        setSelectedDesk={setSelectedDesk}
-      />
+      <Office desks={desks} setSelectedDesk={setSelectedDesk} />
 
       {selectedDesk && (
         <div
           style={{
             position: "absolute",
-            top: 20,
-            right: 20,
-            background: "#111",
+            top: 24,
+            right: 24,
+            width: 300,
+            padding: 18,
+            borderRadius: 16,
+            background: "rgba(17,17,17,0.6)",
+            backdropFilter: "blur(14px)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
             color: "#fff",
-            padding: "12px 16px",
-            borderRadius: "8px",
-            minWidth: "240px"
+            fontFamily: "Inter, system-ui"
           }}
         >
-          <h3>Desk Info</h3>
-          <p><b>Owner:</b> {selectedDesk.owner}</p>
-          <p><b>Status:</b> {selectedDesk.status}</p>
-          <p><b>Light:</b> {selectedDesk.light ? "ON" : "OFF"}</p>
+          <h3 style={{ marginBottom: 4 }}>{selectedDesk.owner}</h3>
+          <p style={{ fontSize: 12, opacity: 0.7 }}>
+            Status: {selectedDesk.status}
+          </p>
 
-          <h4>Create Task</h4>
-
+          {/* Create Task */}
           <input
-            type="text"
-            placeholder="Enter task title"
             value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            style={{ width: "100%", marginBottom: "8px" }}
+            onChange={e => setNewTaskTitle(e.target.value)}
+            placeholder="New task..."
+            style={{
+              width: "100%",
+              marginTop: 12,
+              padding: 10,
+              borderRadius: 10,
+              border: "none",
+              outline: "none",
+              background: "rgba(255,255,255,0.1)",
+              color: "#fff"
+            }}
           />
 
-          <button onClick={handleCreateTask}>
+          <button
+            onClick={handleCreateTask}
+            style={{
+              marginTop: 10,
+              width: "100%",
+              padding: 10,
+              borderRadius: 10,
+              border: "none",
+              cursor: "pointer",
+              background: "#22c55e",
+              color: "#000",
+              fontWeight: 600
+            }}
+          >
             Add Task
           </button>
 
-          <h4 style={{ marginTop: "10px" }}>Tasks</h4>
+          {/* Tasks */}
+          <div style={{ marginTop: 18 }}>
+            {tasksLoading && <p>Loading...</p>}
+            {!tasksLoading && tasks.length === 0 && (
+              <p style={{ opacity: 0.6 }}>No tasks</p>
+            )}
 
-          {tasksLoading && <p>Loading tasks...</p>}
-          {!tasksLoading && tasks.length === 0 && <p>No tasks</p>}
-
-          {!tasksLoading && tasks.map(task => (
-            <div
-              key={task.id}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "4px"
-              }}
-            >
-              <span
+            {tasks.map(task => (
+              <div
+                key={task.id}
                 style={{
-                  cursor: "pointer",
-                  textDecoration: task.status === "done" ? "line-through" : "none"
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "10px 12px",
+                  marginBottom: 10,
+                  borderRadius: 12,
+                  background: "rgba(255,255,255,0.08)",
+                  transition: "all 0.2s ease"
                 }}
-                onClick={() => handleToggleTaskStatus(task.id)}
-              >
-                {task.status === "done" ? "✅" : "⏳"} {task.title}
-              </span>
-
-              <button
-                onClick={() => handleDeleteTask(task.id)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#ef4444",
-                  cursor: "pointer",
-                  fontSize: "14px"
+                onMouseEnter={e => {
+                  e.currentTarget.style.background =
+                    "rgba(255,255,255,0.16)";
+                  e.currentTarget.style.transform = "scale(1.03)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background =
+                    "rgba(255,255,255,0.08)";
+                  e.currentTarget.style.transform = "scale(1)";
                 }}
               >
-                ❌
-              </button>
-            </div>
-          ))}
+                <span
+                  onClick={() => handleToggleTaskStatus(task.id)}
+                  style={{
+                    flex: 1,
+                    cursor: "pointer",
+                    textDecoration:
+                      task.status === "done"
+                        ? "line-through"
+                        : "none",
+                    opacity: task.status === "done" ? 0.6 : 1
+                  }}
+                >
+                  {task.status === "done" ? "✅" : "⏳"} {task.title}
+                </span>
+
+                <button
+                  onClick={() => handleDeleteTask(task.id)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#ef4444",
+                    cursor: "pointer",
+                    opacity: 0,
+                    transition: "opacity 0.2s"
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = 1)}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = 0)}
+                >
+                  ❌
+                </button>
+              </div>
+            ))}
+          </div>
 
           <button
-            style={{ marginTop: "10px" }}
             onClick={() => setSelectedDesk(null)}
+            style={{
+              marginTop: 12,
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              color: "#9ca3af",
+              cursor: "pointer"
+            }}
           >
             Close
           </button>
