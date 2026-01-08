@@ -1,24 +1,20 @@
 import { Text } from "@react-three/drei";
 
 export default function Desk({ desk, position, onSelect }) {
-  const color =
-    desk.status === "online" ? "#22c55e" : "#6b7280";
+  const color = desk.status === "online" ? "#22c55e" : "#6b7280";
 
   return (
     <group
       position={position}
-      onClick={() => {
-        console.log("Desk clicked:", desk);
-        onSelect(desk);
-      }}
+      onClick={onSelect}   // ✅ FIX: just call onSelect
     >
-      {/* Desk body (SCALED UP + LIFTED) */}
+      {/* Desk body */}
       <mesh scale={[1.2, 1.2, 1.2]}>
         <boxGeometry args={[1.5, 0.4, 1]} />
         <meshStandardMaterial color={color} />
       </mesh>
 
-      {/* Desk owner name (MOVED UP + BIGGER) */}
+      {/* Desk owner name */}
       <Text
         position={[0, 0.9, 0]}
         fontSize={0.25}
@@ -29,7 +25,7 @@ export default function Desk({ desk, position, onSelect }) {
         {desk.owner}
       </Text>
 
-      {/* Desk light (SLIGHTLY HIGHER) */}
+      {/* Desk light */}
       {desk.light && (
         <pointLight
           position={[0, 1.2, 0]}
