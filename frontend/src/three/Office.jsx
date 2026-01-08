@@ -5,38 +5,30 @@ import * as THREE from "three";
 import Desk from "./Desk";
 import Rain from "./Rain";
 
-/* 🌌 SKY + SUN / MOON */
+/* 🌌 SKY */
 function Sky({ isNight }) {
   const skyRef = useRef();
   const sunRef = useRef();
 
   useFrame(() => {
-    // Animate sun / moon position
-    if (sunRef.current) {
-      const targetY = isNight ? -20 : 20;
-      sunRef.current.position.y +=
-        (targetY - sunRef.current.position.y) * 0.05;
-    }
+    const targetY = isNight ? -20 : 20;
+    sunRef.current.position.y +=
+      (targetY - sunRef.current.position.y) * 0.05;
 
-    // Animate sky color
-    if (skyRef.current) {
-      const targetColor = new THREE.Color(
-        isNight ? "#020617" : "#7dd3fc"
-      );
-      skyRef.current.material.color.lerp(targetColor, 0.02);
-    }
+    const targetColor = new THREE.Color(
+      isNight ? "#020617" : "#7dd3fc"
+    );
+    skyRef.current.material.color.lerp(targetColor, 0.02);
   });
 
   return (
     <>
-      {/* Sky Dome */}
-      <mesh ref={skyRef} scale={100}>
+      <mesh ref={skyRef} scale={120}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial side={THREE.BackSide} color="#020617" />
       </mesh>
 
-      {/* Sun / Moon */}
-      <mesh ref={sunRef} position={[30, isNight ? -20 : 20, -40]}>
+      <mesh ref={sunRef} position={[30, isNight ? -20 : 20, -50]}>
         <sphereGeometry args={[3, 32, 32]} />
         <meshStandardMaterial
           emissive={isNight ? "#e5e7eb" : "#fde047"}
@@ -45,7 +37,7 @@ function Sky({ isNight }) {
         />
         <pointLight
           intensity={isNight ? 0.3 : 1}
-          distance={100}
+          distance={120}
           color={isNight ? "#c7d2fe" : "#fde047"}
         />
       </mesh>
@@ -53,7 +45,43 @@ function Sky({ isNight }) {
   );
 }
 
-/* 🎥 CAMERA CONTROLLER */
+/* 🌆 CITY BACKDROP */
+function CityBackdrop({ isNight }) {
+  const groupRef = useRef();
+
+  useFrame(() => {
+    // subtle breathing motion
+    groupRef.current.position.x =
+      Math.sin(Date.now() * 0.0001) * 0.2;
+  });
+
+  return (
+    <group ref={groupRef} position={[0, 0, -12]}>
+      {Array.from({ length: 40 }).map((_, i) => {
+        const height = Math.random() * 4 + 2;
+        return (
+          <mesh
+            key={i}
+            position={[
+              i - 20,
+              height / 2,
+              Math.random() * -2
+            ]}
+          >
+            <boxGeometry args={[0.8, height, 1]} />
+            <meshStandardMaterial
+              color={isNight ? "#020617" : "#9ca3af"}
+              emissive={isNight ? "#1e293b" : "#000000"}
+              emissiveIntensity={isNight ? 0.4 : 0}
+            />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+/* 🎥 CAMERA */
 function CameraController({ targetPos, lookAtPos }) {
   const { camera } = useThree();
 
@@ -96,10 +124,9 @@ export default function Office({ desks, setSelectedDesk, isNight }) {
 
   return (
     <Canvas camera={{ position: [0, 3, 6], fov: 50 }}>
-      {/* 🌌 SKY SYSTEM */}
       <Sky isNight={isNight} />
+      <CityBackdrop isNight={isNight} />
 
-      {/* Lighting */}
       <ambientLight intensity={isNight ? 0.35 : 0.7} />
       <directionalLight
         position={[5, 5, 5]}
@@ -107,7 +134,6 @@ export default function Office({ desks, setSelectedDesk, isNight }) {
         color={isNight ? "#a5b4fc" : "#ffffff"}
       />
 
-      {/* 🌧️ Rain */}
       <Rain />
 
       <CameraController
@@ -115,7 +141,6 @@ export default function Office({ desks, setSelectedDesk, isNight }) {
         lookAtPos={lookAtTarget}
       />
 
-      {/* Floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[20, 20]} />
         <meshStandardMaterial
@@ -123,7 +148,6 @@ export default function Office({ desks, setSelectedDesk, isNight }) {
         />
       </mesh>
 
-      {/* Desks */}
       {desks.map((desk, index) => {
         const position = [index * 3 - 2, 1.1, -1.5];
         return (
