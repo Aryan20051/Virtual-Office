@@ -4,14 +4,18 @@ import Desk from "./Desk";
 
 export default function Office({ desks, setSelectedDesk }) {
   return (
-    <Canvas camera={{ position: [0, 5, 8], fov: 50 }}>
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[5, 10, 5]} intensity={1} />
+    <Canvas
+      camera={{ position: [0, 3, 6], fov: 50 }}
+      style={{ background: "#0f172a" }}
+    >
+      {/* Lights */}
+      <ambientLight intensity={1} />
+      <directionalLight position={[5, 5, 5]} intensity={1} />
 
       {/* Floor */}
-      <mesh rotation-x={-Math.PI / 2}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
         <planeGeometry args={[20, 20]} />
-        <meshStandardMaterial color="#1f2937" />
+        <meshStandardMaterial color="gray" />
       </mesh>
 
       {/* Desks */}
@@ -19,7 +23,7 @@ export default function Office({ desks, setSelectedDesk }) {
         <Desk
           key={desk.id}
           desk={desk}
-          position={[index * 3 - 2, 0.2, 0]}
+          position={[index * 3 - 2, 1.1, -1.5]}
           onSelect={setSelectedDesk}
         />
       ))}

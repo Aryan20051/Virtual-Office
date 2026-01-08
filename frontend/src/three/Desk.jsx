@@ -12,16 +12,16 @@ export default function Desk({ desk, position, onSelect }) {
         onSelect(desk);
       }}
     >
-      {/* Desk body */}
-      <mesh>
+      {/* Desk body (SCALED UP + LIFTED) */}
+      <mesh scale={[1.2, 1.2, 1.2]}>
         <boxGeometry args={[1.5, 0.4, 1]} />
         <meshStandardMaterial color={color} />
       </mesh>
 
-      {/* Name */}
+      {/* Desk owner name (MOVED UP + BIGGER) */}
       <Text
-        position={[0, 0.5, 0]}
-        fontSize={0.2}
+        position={[0, 0.9, 0]}
+        fontSize={0.25}
         color="white"
         anchorX="center"
         anchorY="middle"
@@ -29,10 +29,10 @@ export default function Desk({ desk, position, onSelect }) {
         {desk.owner}
       </Text>
 
-      {/* Desk light */}
+      {/* Desk light (SLIGHTLY HIGHER) */}
       {desk.light && (
         <pointLight
-          position={[0, 1, 0]}
+          position={[0, 1.2, 0]}
           intensity={1}
           distance={3}
           color="#fff7cc"
