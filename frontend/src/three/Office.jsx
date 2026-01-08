@@ -86,7 +86,7 @@ function CameraController({ targetPos, lookAtPos }) {
   const { camera } = useThree();
 
   useFrame(() => {
-    camera.position.lerp(targetPos, 0.12);
+    camera.position.lerp(targetPos, 0.04);
     camera.lookAt(lookAtPos);
   });
 
@@ -161,7 +161,18 @@ export default function Office({ desks, setSelectedDesk, isNight }) {
         );
       })}
 
-      <OrbitControls enableZoom={false} />
+      <OrbitControls
+        enableZoom={true}
+        enablePan={false}
+        enableRotate={true}
+        dampingFactor={0.08}
+        enableDamping
+        minDistance={4}
+        maxDistance={12}
+        minPolarAngle={Math.PI / 4}
+        maxPolarAngle={Math.PI / 2.2}
+      />
+
     </Canvas>
   );
 }
