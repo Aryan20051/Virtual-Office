@@ -42,7 +42,7 @@ function App() {
       });
   }, [selectedDesk]);
 
-  // 🔹 Create task (POST)
+  // 🔹 Create task
   const handleCreateTask = () => {
     if (!newTaskTitle.trim() || !selectedDesk) return;
 
@@ -68,13 +68,29 @@ function App() {
       .catch(err => console.error("Create task error:", err));
   };
 
+  // 🔹 DELETE TASK
+  const handleDeleteTask = (taskId) => {
+    if (!selectedDesk) return;
+
+    fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+      method: "DELETE"
+    })
+      .then(res => res.json())
+      .then(() => {
+        // reload tasks after delete
+        fetch(`http://localhost:5000/api/tasks/${selectedDesk.id}`)
+          .then(res => res.json())
+          .then(data => setTasks(data));
+      })
+      .catch(err => console.error("Delete task error:", err));
+  };
+
   if (loading) {
     return <h2>Loading 3D office...</h2>;
   }
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      {/* 🔴 IMPORTANT: pass RAW setSelectedDesk */}
       <Office
         desks={desks}
         setSelectedDesk={setSelectedDesk}
@@ -90,7 +106,7 @@ function App() {
             color: "#fff",
             padding: "12px 16px",
             borderRadius: "8px",
-            minWidth: "220px"
+            minWidth: "240px"
           }}
         >
           <h3>Desk Info</h3>
@@ -112,15 +128,38 @@ function App() {
             Add Task
           </button>
 
-          <h4>Tasks</h4>
+          <h4 style={{ marginTop: "10px" }}>Tasks</h4>
 
           {tasksLoading && <p>Loading tasks...</p>}
           {!tasksLoading && tasks.length === 0 && <p>No tasks</p>}
 
           {!tasksLoading && tasks.map(task => (
-            <p key={task.id}>
-              {task.status === "done" ? "✅" : "⏳"} {task.title}
-            </p>
+            <div
+              key={task.id}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "4px"
+              }}
+            >
+              <span>
+                {task.status === "done" ? "✅" : "⏳"} {task.title}
+              </span>
+
+              <button
+                onClick={() => handleDeleteTask(task.id)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#ef4444",
+                  cursor: "pointer",
+                  fontSize: "14px"
+                }}
+              >
+                ❌
+              </button>
+            </div>
           ))}
 
           <button
