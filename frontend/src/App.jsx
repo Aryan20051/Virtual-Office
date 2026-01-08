@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Office from "./three/Office";
+import { playSound } from "./utils/sound";
+import rainSound from "./assets/sounds/rain.mp3";
+import clickSound from "./assets/sounds/click.mp3";
 
 function App() {
   const [desks, setDesks] = useState([]);
@@ -10,7 +13,23 @@ function App() {
   const [tasksLoading, setTasksLoading] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
-  // Load desks
+  // 🌧️ Rain sound control
+  const rainAudioRef = useRef(null);
+  const [isRainMuted, setIsRainMuted] = useState(false);
+
+  /* 🌧️ Start rain ambience */
+  useEffect(() => {
+    const rain = new Audio(rainSound);
+    rain.loop = true;
+    rain.volume = 0.12;
+    rain.play();
+
+    rainAudioRef.current = rain;
+
+    return () => rain.pause();
+  }, []);
+
+  /* Load desks */
   useEffect(() => {
     fetch("http://localhost:5000/api/desks")
       .then(res => res.json())
@@ -21,7 +40,7 @@ function App() {
       .catch(() => setLoading(false));
   }, []);
 
-  // Load tasks when desk changes
+  /* Load tasks */
   useEffect(() => {
     if (!selectedDesk) return;
 
@@ -43,6 +62,8 @@ function App() {
   const handleCreateTask = () => {
     if (!newTaskTitle.trim() || !selectedDesk) return;
 
+    playSound(clickSound, 0.25);
+
     fetch("http://localhost:5000/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -50,23 +71,32 @@ function App() {
         deskId: selectedDesk.id,
         title: newTaskTitle
       })
-    })
-      .then(() => {
-        setNewTaskTitle("");
-        reloadTasks();
-      });
+    }).then(() => {
+      setNewTaskTitle("");
+      reloadTasks();
+    });
   };
 
   const handleDeleteTask = (taskId) => {
+    playSound(clickSound, 0.2);
     fetch(`http://localhost:5000/api/tasks/${taskId}`, {
       method: "DELETE"
     }).then(() => reloadTasks());
   };
 
   const handleToggleTaskStatus = (taskId) => {
+    playSound(clickSound, 0.2);
     fetch(`http://localhost:5000/api/tasks/${taskId}`, {
       method: "PATCH"
     }).then(() => reloadTasks());
+  };
+
+  /* 🌧️ Toggle rain mute */
+  const toggleRain = () => {
+    if (!rainAudioRef.current) return;
+
+    rainAudioRef.current.muted = !isRainMuted;
+    setIsRainMuted(prev => !prev);
   };
 
   if (loading) return <h2>Loading 3D office...</h2>;
@@ -74,6 +104,26 @@ function App() {
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <Office desks={desks} setSelectedDesk={setSelectedDesk} />
+
+      {/* 🌧️ Rain Mute Button */}
+      <button
+        onClick={toggleRain}
+        style={{
+          position: "absolute",
+          bottom: 20,
+          left: 20,
+          padding: "8px 12px",
+          borderRadius: 10,
+          border: "none",
+          cursor: "pointer",
+          background: "rgba(17,17,17,0.6)",
+          backdropFilter: "blur(10px)",
+          color: "#fff",
+          fontSize: 14
+        }}
+      >
+        {isRainMuted ? "🔇 Rain Muted" : "🌧️ Rain On"}
+      </button>
 
       {selectedDesk && (
         <div
@@ -88,16 +138,14 @@ function App() {
             backdropFilter: "blur(14px)",
             border: "1px solid rgba(255,255,255,0.12)",
             boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
-            color: "#fff",
-            fontFamily: "Inter, system-ui"
+            color: "#fff"
           }}
         >
-          <h3 style={{ marginBottom: 4 }}>{selectedDesk.owner}</h3>
+          <h3>{selectedDesk.owner}</h3>
           <p style={{ fontSize: 12, opacity: 0.7 }}>
             Status: {selectedDesk.status}
           </p>
 
-          {/* Create Task */}
           <input
             value={newTaskTitle}
             onChange={e => setNewTaskTitle(e.target.value)}
@@ -108,7 +156,6 @@ function App() {
               padding: 10,
               borderRadius: 10,
               border: "none",
-              outline: "none",
               background: "rgba(255,255,255,0.1)",
               color: "#fff"
             }}
@@ -122,56 +169,32 @@ function App() {
               padding: 10,
               borderRadius: 10,
               border: "none",
-              cursor: "pointer",
               background: "#22c55e",
-              color: "#000",
               fontWeight: 600
             }}
           >
             Add Task
           </button>
 
-          {/* Tasks */}
-          <div style={{ marginTop: 18 }}>
-            {tasksLoading && <p>Loading...</p>}
-            {!tasksLoading && tasks.length === 0 && (
-              <p style={{ opacity: 0.6 }}>No tasks</p>
-            )}
-
+          <div style={{ marginTop: 16 }}>
             {tasks.map(task => (
               <div
                 key={task.id}
                 style={{
                   display: "flex",
-                  alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "10px 12px",
-                  marginBottom: 10,
+                  padding: 10,
+                  marginBottom: 8,
                   borderRadius: 12,
-                  background: "rgba(255,255,255,0.08)",
-                  transition: "all 0.2s ease"
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background =
-                    "rgba(255,255,255,0.16)";
-                  e.currentTarget.style.transform = "scale(1.03)";
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background =
-                    "rgba(255,255,255,0.08)";
-                  e.currentTarget.style.transform = "scale(1)";
+                  background: "rgba(255,255,255,0.08)"
                 }}
               >
                 <span
                   onClick={() => handleToggleTaskStatus(task.id)}
                   style={{
-                    flex: 1,
                     cursor: "pointer",
                     textDecoration:
-                      task.status === "done"
-                        ? "line-through"
-                        : "none",
-                    opacity: task.status === "done" ? 0.6 : 1
+                      task.status === "done" ? "line-through" : "none"
                   }}
                 >
                   {task.status === "done" ? "✅" : "⏳"} {task.title}
@@ -183,32 +206,14 @@ function App() {
                     background: "transparent",
                     border: "none",
                     color: "#ef4444",
-                    cursor: "pointer",
-                    opacity: 0,
-                    transition: "opacity 0.2s"
+                    cursor: "pointer"
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.opacity = 1)}
-                  onMouseLeave={e => (e.currentTarget.style.opacity = 0)}
                 >
                   ❌
                 </button>
               </div>
             ))}
           </div>
-
-          <button
-            onClick={() => setSelectedDesk(null)}
-            style={{
-              marginTop: 12,
-              width: "100%",
-              background: "transparent",
-              border: "none",
-              color: "#9ca3af",
-              cursor: "pointer"
-            }}
-          >
-            Close
-          </button>
         </div>
       )}
     </div>
