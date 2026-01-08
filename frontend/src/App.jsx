@@ -85,6 +85,23 @@ function App() {
       .catch(err => console.error("Delete task error:", err));
   };
 
+  const handleToggleTaskStatus = (taskId) => {
+    if (!selectedDesk) return;
+
+    fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+      method: "PATCH"
+    })
+      .then(res => res.json())
+      .then(() => {
+        // reload tasks
+        fetch(`http://localhost:5000/api/tasks/${selectedDesk.id}`)
+          .then(res => res.json())
+          .then(data => setTasks(data));
+      })
+      .catch(err => console.error("Toggle task error:", err));
+  };
+
+
   if (loading) {
     return <h2>Loading 3D office...</h2>;
   }
@@ -143,7 +160,13 @@ function App() {
                 marginBottom: "4px"
               }}
             >
-              <span>
+              <span
+                style={{
+                  cursor: "pointer",
+                  textDecoration: task.status === "done" ? "line-through" : "none"
+                }}
+                onClick={() => handleToggleTaskStatus(task.id)}
+              >
                 {task.status === "done" ? "✅" : "⏳"} {task.title}
               </span>
 

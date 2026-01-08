@@ -87,3 +87,29 @@ app.delete("/api/tasks/:taskId", (req, res) => {
   tasks.splice(index, 1);
   res.json({ message: "Task deleted" });
 });
+
+app.patch("/api/tasks/:taskId", (req, res) => {
+  const { taskId } = req.params;
+
+  const index = tasks.findIndex(t => t.id === taskId);
+
+  if (index === -1) {
+    return res.status(404).json({ error: "Task not found" });
+  }
+
+  const updatedTask = {
+    ...tasks[index],
+    status: tasks[index].status === "pending" ? "done" : "pending"
+  };
+
+  tasks[index] = updatedTask;
+
+  res.json(updatedTask);
+});
+
+
+/* 🔴 LISTEN MUST BE LAST */
+app.listen(5000, () => {
+  console.log("✅ Backend running on http://localhost:5000");
+});
+
