@@ -13,14 +13,18 @@ function App() {
   const [tasksLoading, setTasksLoading] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
-  // 🌧️ Rain sound
+  // 🌧️ Rain
   const rainAudioRef = useRef(null);
-  const [isRainMuted, setIsRainMuted] = useState(false);
+  const [isRainMuted, setIsRainMuted] = useState(
+    localStorage.getItem("rainMuted") === "true"
+  );
 
   // 🌗 Day / Night
-  const [isNight, setIsNight] = useState(true);
+  const [isNight, setIsNight] = useState(
+    localStorage.getItem("nightMode") !== "false"
+  );
 
-  // 🎬 Panel animation state
+  // 🎬 Panel animation
   const [showPanel, setShowPanel] = useState(false);
 
   /* 🌧️ Start rain ambience */
@@ -28,10 +32,25 @@ function App() {
     const rain = new Audio(rainSound);
     rain.loop = true;
     rain.volume = 0.12;
+    rain.muted = isRainMuted;
     rain.play();
     rainAudioRef.current = rain;
+
     return () => rain.pause();
   }, []);
+
+  /* Persist rain mute */
+  useEffect(() => {
+    localStorage.setItem("rainMuted", isRainMuted);
+    if (rainAudioRef.current) {
+      rainAudioRef.current.muted = isRainMuted;
+    }
+  }, [isRainMuted]);
+
+  /* Persist night mode */
+  useEffect(() => {
+    localStorage.setItem("nightMode", isNight);
+  }, [isNight]);
 
   /* Load desks */
   useEffect(() => {
@@ -54,7 +73,7 @@ function App() {
       .then(data => {
         setTasks(data);
         setTasksLoading(false);
-        setShowPanel(true); // 🎬 animate in
+        setShowPanel(true);
       });
   }, [selectedDesk]);
 
@@ -96,14 +115,12 @@ function App() {
   };
 
   const toggleRain = () => {
-    if (!rainAudioRef.current) return;
-    rainAudioRef.current.muted = !isRainMuted;
     setIsRainMuted(prev => !prev);
   };
 
   const closePanel = () => {
     setShowPanel(false);
-    setTimeout(() => setSelectedDesk(null), 250); // 🎬 wait for animation
+    setTimeout(() => setSelectedDesk(null), 250);
   };
 
   if (loading) return <h2>Loading 3D office...</h2>;
