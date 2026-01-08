@@ -3,39 +3,43 @@ import Office from "./three/Office";
 import { playSound } from "./utils/sound";
 import rainSound from "./assets/sounds/rain.mp3";
 import clickSound from "./assets/sounds/click.mp3";
+import ControlsBar from "./components/ControlsBar";
+import TaskPanel from "./components/TaskPanel";
 
 function App() {
+  /* 🏢 Core state */
   const [desks, setDesks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDesk, setSelectedDesk] = useState(null);
 
+  /* 📝 Tasks */
   const [tasks, setTasks] = useState([]);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
-  // 🌧️ Rain
-  const rainAudioRef = useRef(null);
+  /* 🎬 Panel animation */
+  const [showPanel, setShowPanel] = useState(false);
+
+  /* 🌗 Day / Night */
+  const [isNight, setIsNight] = useState(
+    localStorage.getItem("nightMode") === "false" ? false : true
+  );
+
+  /* 🌧️ Rain audio */
   const [isRainMuted, setIsRainMuted] = useState(
     localStorage.getItem("rainMuted") === "true"
   );
+  const rainAudioRef = useRef(null);
 
-  // 🌗 Day / Night
-  const [isNight, setIsNight] = useState(
-    localStorage.getItem("nightMode") !== "false"
-  );
-
-  // 🎬 Panel animation
-  const [showPanel, setShowPanel] = useState(false);
-
-  /* 🌧️ Start rain ambience */
+  /* 🌧️ Start rain ambience ONCE */
   useEffect(() => {
     const rain = new Audio(rainSound);
     rain.loop = true;
     rain.volume = 0.12;
     rain.muted = isRainMuted;
     rain.play();
-    rainAudioRef.current = rain;
 
+    rainAudioRef.current = rain;
     return () => rain.pause();
   }, []);
 
@@ -63,7 +67,7 @@ function App() {
       .catch(() => setLoading(false));
   }, []);
 
-  /* Load tasks */
+  /* Load tasks when desk selected */
   useEffect(() => {
     if (!selectedDesk) return;
 
@@ -83,6 +87,7 @@ function App() {
       .then(data => setTasks(data));
   };
 
+  /* 📝 Task handlers */
   const handleCreateTask = () => {
     if (!newTaskTitle.trim() || !selectedDesk) return;
     playSound(clickSound, 0.25);
@@ -114,9 +119,9 @@ function App() {
     }).then(() => reloadTasks());
   };
 
-  const toggleRain = () => {
-    setIsRainMuted(prev => !prev);
-  };
+  /* 🎛️ Controls */
+  const toggleRain = () => setIsRainMuted(prev => !prev);
+  const toggleNight = () => setIsNight(prev => !prev);
 
   const closePanel = () => {
     setShowPanel(false);
@@ -133,147 +138,24 @@ function App() {
         isNight={isNight}
       />
 
-      {/* 🌧️ Rain Toggle */}
-      <button
-        onClick={toggleRain}
-        style={{
-          position: "absolute",
-          bottom: 20,
-          left: 20,
-          padding: "8px 12px",
-          borderRadius: 10,
-          border: "none",
-          background: "rgba(17,17,17,0.6)",
-          color: "#fff",
-          cursor: "pointer"
-        }}
-      >
-        {isRainMuted ? "🔇 Rain Muted" : "🌧️ Rain On"}
-      </button>
+      <ControlsBar
+        isNight={isNight}
+        toggleNight={toggleNight}
+        isRainMuted={isRainMuted}
+        toggleRain={toggleRain}
+      />
 
-      {/* 🌗 Day / Night */}
-      <button
-        onClick={() => setIsNight(prev => !prev)}
-        style={{
-          position: "absolute",
-          bottom: 20,
-          left: 140,
-          padding: "8px 12px",
-          borderRadius: 10,
-          border: "none",
-          background: "rgba(17,17,17,0.6)",
-          color: "#fff",
-          cursor: "pointer"
-        }}
-      >
-        {isNight ? "🌙 Night" : "🌞 Day"}
-      </button>
-
-      {/* 🎬 Animated Panel */}
-      {selectedDesk && (
-        <div
-          style={{
-            position: "absolute",
-            top: 24,
-            right: showPanel ? 24 : -340,
-            opacity: showPanel ? 1 : 0,
-            width: 300,
-            padding: 18,
-            borderRadius: 16,
-            background: "rgba(17,17,17,0.6)",
-            backdropFilter: "blur(14px)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
-            color: "#fff",
-            transition: "all 0.25s ease"
-          }}
-        >
-          <h3>{selectedDesk.owner}</h3>
-
-          <input
-            value={newTaskTitle}
-            onChange={e => setNewTaskTitle(e.target.value)}
-            placeholder="New task..."
-            style={{
-              width: "100%",
-              marginTop: 12,
-              padding: 10,
-              borderRadius: 10,
-              border: "none",
-              background: "rgba(255,255,255,0.1)",
-              color: "#fff"
-            }}
-          />
-
-          <button
-            onClick={handleCreateTask}
-            style={{
-              marginTop: 10,
-              width: "100%",
-              padding: 10,
-              borderRadius: 10,
-              border: "none",
-              background: "#22c55e",
-              fontWeight: 600
-            }}
-          >
-            Add Task
-          </button>
-
-          <div style={{ marginTop: 16 }}>
-            {tasks.map(task => (
-              <div
-                key={task.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  padding: 10,
-                  marginBottom: 8,
-                  borderRadius: 12,
-                  background: "rgba(255,255,255,0.08)"
-                }}
-              >
-                <span
-                  onClick={() => handleToggleTaskStatus(task.id)}
-                  style={{
-                    cursor: "pointer",
-                    textDecoration:
-                      task.status === "done" ? "line-through" : "none"
-                  }}
-                >
-                  {task.status === "done" ? "✅" : "⏳"} {task.title}
-                </span>
-
-                <button
-                  onClick={() => handleDeleteTask(task.id)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "#ef4444",
-                    cursor: "pointer"
-                  }}
-                >
-                  ❌
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={closePanel}
-            style={{
-              marginTop: 10,
-              width: "100%",
-              background: "transparent",
-              border: "none",
-              color: "#9ca3af",
-              cursor: "pointer"
-            }}
-          >
-            Close
-          </button>
-        </div>
-      )}
+      <TaskPanel
+        selectedDesk={selectedDesk}
+        tasks={tasks}
+        newTaskTitle={newTaskTitle}
+        setNewTaskTitle={setNewTaskTitle}
+        handleCreateTask={handleCreateTask}
+        handleToggleTaskStatus={handleToggleTaskStatus}
+        handleDeleteTask={handleDeleteTask}
+        closePanel={closePanel}
+        showPanel={showPanel}
+      />
     </div>
   );
 }
