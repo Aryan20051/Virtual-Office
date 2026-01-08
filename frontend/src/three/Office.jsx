@@ -1,6 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import Desk from "./Desk";
+import Rain from "./Rain";
 
 export default function Office({ desks, setSelectedDesk }) {
   return (
@@ -12,10 +13,12 @@ export default function Office({ desks, setSelectedDesk }) {
       <ambientLight intensity={1} />
       <directionalLight position={[5, 5, 5]} intensity={1} />
 
+      <Rain />
+
       {/* Floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
         <planeGeometry args={[20, 20]} />
-        <meshStandardMaterial color="gray" />
+        <meshStandardMaterial color="black" />
       </mesh>
 
       {/* Desks */}
