@@ -1,10 +1,59 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import * as THREE from "three";
 import Desk from "./Desk";
 import Rain from "./Rain";
 
+/* 🌌 SKY + SUN / MOON */
+function Sky({ isNight }) {
+  const skyRef = useRef();
+  const sunRef = useRef();
+
+  useFrame(() => {
+    // Animate sun / moon position
+    if (sunRef.current) {
+      const targetY = isNight ? -20 : 20;
+      sunRef.current.position.y +=
+        (targetY - sunRef.current.position.y) * 0.05;
+    }
+
+    // Animate sky color
+    if (skyRef.current) {
+      const targetColor = new THREE.Color(
+        isNight ? "#020617" : "#7dd3fc"
+      );
+      skyRef.current.material.color.lerp(targetColor, 0.02);
+    }
+  });
+
+  return (
+    <>
+      {/* Sky Dome */}
+      <mesh ref={skyRef} scale={100}>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshBasicMaterial side={THREE.BackSide} color="#020617" />
+      </mesh>
+
+      {/* Sun / Moon */}
+      <mesh ref={sunRef} position={[30, isNight ? -20 : 20, -40]}>
+        <sphereGeometry args={[3, 32, 32]} />
+        <meshStandardMaterial
+          emissive={isNight ? "#e5e7eb" : "#fde047"}
+          emissiveIntensity={1.5}
+          color={isNight ? "#e5e7eb" : "#fde047"}
+        />
+        <pointLight
+          intensity={isNight ? 0.3 : 1}
+          distance={100}
+          color={isNight ? "#c7d2fe" : "#fde047"}
+        />
+      </mesh>
+    </>
+  );
+}
+
+/* 🎥 CAMERA CONTROLLER */
 function CameraController({ targetPos, lookAtPos }) {
   const { camera } = useThree();
 
@@ -47,7 +96,10 @@ export default function Office({ desks, setSelectedDesk, isNight }) {
 
   return (
     <Canvas camera={{ position: [0, 3, 6], fov: 50 }}>
-      {/* 🌗 Lighting reacts to mode */}
+      {/* 🌌 SKY SYSTEM */}
+      <Sky isNight={isNight} />
+
+      {/* Lighting */}
       <ambientLight intensity={isNight ? 0.35 : 0.7} />
       <directionalLight
         position={[5, 5, 5]}
@@ -55,7 +107,7 @@ export default function Office({ desks, setSelectedDesk, isNight }) {
         color={isNight ? "#a5b4fc" : "#ffffff"}
       />
 
-      {/* 🌧️ Rain feels better at night */}
+      {/* 🌧️ Rain */}
       <Rain />
 
       <CameraController
@@ -67,14 +119,13 @@ export default function Office({ desks, setSelectedDesk, isNight }) {
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[20, 20]} />
         <meshStandardMaterial
-          color={isNight ? "#111827" : "#374151"}
+          color={isNight ? "#020617" : "#e5e7eb"}
         />
       </mesh>
 
       {/* Desks */}
       {desks.map((desk, index) => {
         const position = [index * 3 - 2, 1.1, -1.5];
-
         return (
           <Desk
             key={desk.id}
