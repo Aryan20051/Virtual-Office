@@ -5,6 +5,7 @@ import rainSound from "./assets/sounds/rain.mp3";
 import clickSound from "./assets/sounds/click.mp3";
 
 function App() {
+  const [isNight, setIsNight] = useState(true);
   const [desks, setDesks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDesk, setSelectedDesk] = useState(null);
@@ -103,7 +104,12 @@ function App() {
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
-      <Office desks={desks} setSelectedDesk={setSelectedDesk} />
+      <Office
+        desks={desks}
+        setSelectedDesk={setSelectedDesk}
+        isNight={isNight}
+      />
+
 
       {/* 🌧️ Rain Mute Button */}
       <button
@@ -124,6 +130,26 @@ function App() {
       >
         {isRainMuted ? "🔇 Rain Muted" : "🌧️ Rain On"}
       </button>
+
+      <button
+        onClick={() => setIsNight(prev => !prev)}
+        style={{
+          position: "absolute",
+          bottom: 20,
+          left: 140,
+          padding: "8px 12px",
+          borderRadius: 10,
+          border: "none",
+          cursor: "pointer",
+          background: "rgba(17,17,17,0.6)",
+          backdropFilter: "blur(10px)",
+          color: "#fff",
+          fontSize: 14
+        }}
+      >
+        {isNight ? "🌙 Night Mode" : "🌞 Day Mode"}
+      </button>
+
 
       {selectedDesk && (
         <div
